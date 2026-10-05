@@ -11,10 +11,11 @@
 <title>ごはんマップ</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--bg:#fffaf3;--card:#fff;--tx:#2b2118;--sub:#85766a;--ac:#ff6b35;--ln:#eadfd2;--star:#f5a623}
-@media (prefers-color-scheme:dark){:root{--bg:#1b1612;--card:#272019;--tx:#f4ebe0;--sub:#a89a8c;--ln:#3a3027}}
+:root{--bg:#fffaf3;--card:#fff;--tx:#2b2118;--sub:#85766a;--ac:#ff6b35;--ln:#eadfd2;--star:#f5a623;--pin:54px;--fs:15px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1612;--card:#272019;--tx:#f4ebe0;--sub:#a89a8c;--ln:#3a3027}}
+:root[data-theme="dark"]{--bg:#1b1612;--card:#272019;--tx:#f4ebe0;--sub:#a89a8c;--ln:#3a3027}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top)}
+body{background:var(--bg);color:var(--tx);font:var(--fs)/1.5 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top)}
 header{padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:18px}
 header button{background:none;border:0;color:var(--sub);font-size:12px;cursor:pointer}
 main{flex:1;position:relative;overflow:hidden}
@@ -23,7 +24,7 @@ main{flex:1;position:relative;overflow:hidden}
 nav{display:flex;border-top:1px solid var(--ln);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;color:var(--sub);padding:9px 0 7px;font:inherit;font-size:12px;cursor:pointer}
 nav button b{display:block;font-size:20px;line-height:1.2}nav button.on{color:var(--ac);font-weight:700}
-.pin{position:relative;width:54px;height:54px;border-radius:50%;background:#fff;border:3px solid var(--ac);box-shadow:0 2px 8px #0006}
+.pin{position:relative;width:var(--pin);height:var(--pin);border-radius:50%;background:#fff;border:3px solid var(--ac);box-shadow:0 2px 8px #0006}
 .pin::after{content:'';position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--ac);border-bottom:0}
 .pin .ph{width:100%;height:100%;border-radius:50%;background-color:#ddd;background-size:cover;background-position:center;background-repeat:no-repeat}
 .pin i{position:absolute;right:-12px;top:-8px;background:var(--card);color:var(--star);font:700 12px/1 sans-serif;font-style:normal;border-radius:10px;padding:3px 6px;box-shadow:0 1px 4px #0005}
@@ -31,7 +32,7 @@ nav button b{display:block;font-size:20px;line-height:1.2}nav button.on{color:va
 .here{position:absolute;right:12px;bottom:70px;z-index:500;width:46px;height:46px;border-radius:50%;padding:0;font-size:24px;line-height:1;box-shadow:0 2px 8px #0005}
 .fab{position:absolute;right:12px;bottom:14px;z-index:500;background:var(--ac);color:#fff;border:0;border-radius:22px;height:46px;padding:0 18px;font:inherit;font-weight:700;box-shadow:0 2px 8px #0005}
 .tools{position:absolute;left:12px;right:12px;top:10px;z-index:500;display:flex;gap:6px}
-.tools{flex-wrap:wrap}.tools input{flex:1;margin:0;font-size:16px;box-shadow:0 1px 4px #0004}#res{width:100%;background:var(--card);border-radius:10px;display:none;max-height:40vh;overflow:auto;box-shadow:0 2px 8px #0005}
+.tools{flex-wrap:wrap}.tools input{flex:1;margin:0;font-size:16px;box-shadow:0 1px 4px #0004}#flt{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font:inherit;font-size:14px;box-shadow:0 1px 4px #0004;max-width:70%}#res{width:100%;background:var(--card);border-radius:10px;display:none;max-height:40vh;overflow:auto;box-shadow:0 2px 8px #0005}
 .card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-bottom:12px}.card h3{margin:0 0 8px;font-size:15px}
 input[type=text],input[type=email],input[type=password],textarea{font-size:16px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font:inherit;margin-bottom:10px}
 button.pri{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:700;width:100%;cursor:pointer}
@@ -52,6 +53,13 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.sl{flex:0 0 100%;min-width:0;scroll-snap-align:center}
 .big{font-size:30px;font-weight:700;color:var(--ac);line-height:1.3}
 .so .leaflet-control-container,.so .here,.so .fab{display:none}
+.chip{display:inline-block;padding:6px 12px;border:1px solid var(--ln);border-radius:16px;margin:0 6px 6px 0;cursor:pointer;font-size:14px;background:var(--bg);color:var(--tx)}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.sw{display:inline-block;width:34px;height:34px;border-radius:50%;margin:4px 8px 4px 0;border:3px solid transparent;cursor:pointer;vertical-align:middle}.sw.on{border-color:var(--tx)}
+.set{width:100%;padding:9px;border-radius:10px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font:inherit;font-size:16px;margin:4px 0 12px}
+.li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--ln);cursor:pointer}.li:last-child{border:0}
+.li .th{flex:0 0 72px;height:72px;border-radius:12px;background:var(--ln) center/cover no-repeat}.li b{display:block}
+#gflt{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font:inherit;font-size:14px;box-shadow:0 1px 4px #0004;max-width:48%}
 #sheet{position:absolute;left:0;right:0;bottom:0;max-height:78%;overflow-y:auto;background:var(--card);border-radius:18px 18px 0 0;padding:16px;box-shadow:0 -4px 20px #0006;display:none;z-index:900}
 #comp,#prof{position:absolute;inset:0;background:var(--bg);z-index:1000;overflow-y:auto;padding:12px 16px 24px;display:none}
 .x{float:right;background:none;border:0;color:var(--sub);font-size:24px;cursor:pointer}
@@ -74,7 +82,7 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
 <main>
  <section class="page on" id="pg-map">
   <div id="map"></div>
-  <div class="tools"><input type="text" id="ps" placeholder="駅名・地名で探す" enterkeyhint="search" autocomplete="off"><button class="sec" id="psx">✕</button><button class="sec" id="psb">探す</button><div id="res"></div></div>
+  <div class="tools"><input type="text" id="ps" placeholder="駅名・地名で探す" enterkeyhint="search" autocomplete="off"><button class="sec" id="psx">✕</button><button class="sec" id="psb">探す</button><select id="flt" aria-label="表示する投稿"><option value="all">👥 全体</option></select><select id="gflt" aria-label="ジャンル"></select><div id="res"></div></div>
   <div id="banner"></div>
   <button class="sec here" id="here" aria-label="現在地へ">◎</button>
   <button class="fab" id="fab">📷 投稿</button>
@@ -84,6 +92,7 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
   <div class="card"><h3>友達を探す</h3><input type="text" id="q" placeholder="名前で検索（アプリを使っている人）"><div id="hits"></div></div>
   <div class="card"><h3>フォロー状況</h3><div id="flist"></div><div class="sub" style="margin-top:8px">お互いにフォローすると、相手の投稿が地図に表示されます。</div></div>
  </section>
+ <section class="page" id="pg-list"><div class="card"><div id="llist"></div></div></section>
  <section class="page" id="pg-sum">
   <div class="card"><div class="sub">今月の合計金額</div><div class="big" id="sMonth">¥0</div></div>
   <div class="card"><div class="sub">全期間の合計金額</div><div class="big" id="sAll">¥0</div>
@@ -98,6 +107,11 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
    <div class="sub" id="pmail" style="margin-top:8px"></div></div>
   <div class="card"><div class="sub">表示名</div><input type="text" id="pname" maxlength="20" style="margin:6px 0 0"></div>
   <button class="pri" id="psave">保存する</button>
+  <div class="card" style="margin-top:12px"><h3>⚙ 設定（この端末だけに保存）</h3>
+   <div class="sub">テーマカラー</div><div id="sw"></div>
+   <div class="sub" style="margin-top:8px">外観</div><select class="set" id="sTheme"><option value="auto">自動（端末に合わせる）</option><option value="light">ライト</option><option value="dark">ダーク</option></select>
+   <div class="sub">地図のピンの大きさ</div><select class="set" id="sPin"><option value="44">小</option><option value="54">中</option><option value="66">大</option></select>
+   <div class="sub">文字の大きさ</div><select class="set" id="sFs" style="margin-bottom:0"><option value="13">小</option><option value="15">標準</option><option value="17">大</option></select></div>
   <button class="sec" id="pupd" style="width:100%;margin-top:12px">🔄 最新版に更新する</button>
   <button class="sec" id="plogout" style="width:100%;margin-top:12px">ログアウト</button>
   <div class="sub" id="pver" style="text-align:center;margin-top:14px"></div>
@@ -107,13 +121,14 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
   <div class="card"><img class="pre" id="pre" style="display:none"><input type="file" id="file" accept="image/*" capture="environment" hidden><button class="sec" id="pick">📷 写真を撮る / 選ぶ</button></div>
   <div class="card"><input type="text" id="shop" placeholder="お店の名前" maxlength="60"><textarea id="cm" rows="2" placeholder="感想（任意）" maxlength="200"></textarea>
    <input type="text" id="amt" inputmode="numeric" placeholder="金額（円・任意）例：1200" autocomplete="off">
+   <div class="sub">ジャンル（任意）</div><div id="gn" style="margin:6px 0 10px"></div>
    <div class="sub">評価（★1〜5）</div><div class="stars" id="st"></div></div>
   <div class="card"><div class="sub" id="locTxt" style="margin-bottom:8px">場所：未設定</div>
    <button class="sec" id="gps">📍 現在地</button> <button class="sec" id="onmap">🗺 地図で選ぶ</button></div>
   <button class="pri" id="send">地図に投稿する</button>
  </div>
 </main>
-<nav><button class="on" data-p="map"><b>🗺</b>マップ</button><button data-p="sum"><b>💴</b>集計</button><button data-p="fol"><b>👥</b>友達</button></nav>
+<nav><button class="on" data-p="map"><b>🗺</b>マップ</button><button data-p="list"><b>📋</b>一覧</button><button data-p="sum"><b>💴</b>集計</button><button data-p="fol"><b>👥</b>友達</button></nav>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
@@ -131,7 +146,16 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 if(false){$('#lmsg').textContent='⚠ index.html の firebaseConfig を設定してください';$('#gbtn').disabled=true}
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 let me=null,follows=[],followers=[],postsBy={},subs={},draft={img:null,rating:0,loc:null},picking=false,tmpM=null,editId=null,origLoc=null;
+const GENRES=['ラーメン','カフェ','和食','洋食','中華','焼肉','スイーツ','居酒屋','その他'];
+let ST={color:'#ff6b35',theme:'auto',pin:54,fs:15,map:''};try{Object.assign(ST,JSON.parse(localStorage.getItem('gm_st')||'{}'))}catch(e){}
+const saveST=()=>{try{localStorage.setItem('gm_st',JSON.stringify(ST))}catch(e){}};
+function applyST(){const r=document.documentElement;r.style.setProperty('--ac',ST.color);r.style.setProperty('--pin',ST.pin+'px');r.style.setProperty('--fs',ST.fs+'px');
+ if(ST.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',ST.theme);
+ const m=document.querySelector('meta[name=theme-color]');if(m)m.content=ST.color}
+applyST();
+let gf='';
 const ucache={};
+let filt='all';
 const av=(id,name,photo,sz=30)=>photo?`<img class="av" style="width:${sz}px;height:${sz}px" src="${esc(photo)}" alt="">`:`<span class="av ini" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.5)}px">${esc((name||'?').trim().charAt(0))}</span>`;
 async function loadUsers(ids){const need=[...new Set(ids)].filter(i=>i&&!ucache[i]);await Promise.all(need.map(async i=>{try{const d=await getDoc(doc(db,'users',i));ucache[i]=d.exists()?{name:d.data().name,photo:d.data().photo||''}:{name:'ゲスト',photo:''}}catch(e){}}))}
 
@@ -164,8 +188,8 @@ const mutual=()=>{const f=new Set(followers.map(x=>x.from));return follows.filte
 /* ---- 投稿の購読（自分＋相互フォローの人だけ） ---- */
 function sync(){const want=new Set([me.uid,...mutual()]);
  for(const id of Object.keys(subs))if(!want.has(id)){subs[id]();delete subs[id];delete postsBy[id]}
- for(const id of want)if(!subs[id])subs[id]=onSnapshot(query(collection(db,'posts'),where('uid','==',id)),s=>{postsBy[id]=s.docs.map(d=>({id:d.id,...d.data()}));drawPins();loadUsers([id])},()=>{});
- drawPins();if($('#pg-fol').classList.contains('on'))renderFol()}
+ for(const id of want)if(!subs[id])subs[id]=onSnapshot(query(collection(db,'posts'),where('uid','==',id)),s=>{postsBy[id]=s.docs.map(d=>({id:d.id,...d.data()}));drawPins();loadUsers([id]).then(buildFlt)},()=>{});
+ loadUsers(mutual()).then(buildFlt);buildFlt();drawPins();if($('#pg-fol').classList.contains('on'))renderFol()}
 
 /* ---- map ---- */
 const map=L.map('map',{zoomControl:false}).setView([35.68,139.76],13);
@@ -173,18 +197,26 @@ L.control.zoom({position:'bottomleft'}).addTo(map);
 const gsi=(k,ext='png')=>L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/'+k+'/{z}/{x}/{y}.'+ext,{maxNativeZoom:18,maxZoom:19,attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>'});
 const base={'標準':gsi('std'),'淡色':gsi('pale'),'航空写真':gsi('seamlessphoto','jpg'),'OSM':L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'})};
 base['標準'].addTo(map);const ctrl=L.control.layers(base,null,{position:'bottomleft',collapsed:true}).addTo(map);
+if(ST.map&&ST.map!=='やわらか'&&base[ST.map]){map.removeLayer(base['標準']);base[ST.map].addTo(map)}
 /* Apple風のやわらかいベクター地図（OpenFreeMap・無料・キー不要）。読み込めなければ地理院の標準地図のまま */
 (async()=>{try{if(!L.maplibreGL||!window.maplibregl)throw 0;
  const st=await (await fetch('https://tiles.openfreemap.org/styles/liberty')).json();
  st.layers.forEach(l=>{if(l.layout&&l.layout['text-field'])l.layout['text-field']=['coalesce',['get','name:ja'],['get','name']]});
  const vec=L.maplibreGL({style:st,attribution:'© OpenStreetMap contributors, <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © OpenMapTiles'});
- map.removeLayer(base['標準']);vec.addTo(map);ctrl.addBaseLayer(vec,'やわらか');
+ base['やわらか']=vec;ctrl.addBaseLayer(vec,'やわらか');if(!ST.map||ST.map==='やわらか'){Object.values(base).forEach(l=>l!==vec&&map.hasLayer(l)&&map.removeLayer(l));vec.addTo(map)}
  }catch(e){console.warn('vector map unavailable',e)}})();
 const layer=L.layerGroup().addTo(map);
-function drawPins(){if(me&&$('#pg-sum').classList.contains('on'))renderSum();layer.clearLayers();const g={};
- Object.values(postsBy).flat().forEach(p=>{const k=Math.round(p.lat/.0003)+','+Math.round(p.lng/.0003);(g[k]=g[k]||[]).push(p)});
+const shown=()=>Object.values(postsBy).flat().filter(p=>(!gf||p.genre===gf)&&(filt==='all'||(filt==='me'?p.uid===me.uid:filt==='others'?p.uid!==me.uid:p.uid===filt)));
+function buildFlt(){const ids=mutual();if(filt!=='all'&&filt!=='me'&&filt!=='others'&&!ids.includes(filt))filt='all';
+ const o=[['all','👥 全体'],['me','🙋 自分だけ'],['others','👥 自分以外（友達だけ）'],...ids.map(i=>[i,'👤 '+((ucache[i]||{}).name||'友達')+'の投稿'])];
+ $('#flt').innerHTML=o.map(([v,t])=>`<option value="${esc(v)}"${v===filt?' selected':''}>${esc(t)}</option>`).join('')}
+$('#flt').onchange=e=>{filt=e.target.value;drawPins();const l=shown();if(l.length)map.fitBounds(l.map(p=>[p.lat,p.lng]),{maxZoom:16,padding:[60,60]})};
+function buildG(){$('#gflt').innerHTML='<option value="">🏷 すべてのジャンル</option>'+GENRES.map(g=>`<option value="${g}"${g===gf?' selected':''}>${g}</option>`).join('')}
+buildG();$('#gflt').onchange=e=>{gf=e.target.value;drawPins();const l=shown();if(l.length)map.fitBounds(l.map(p=>[p.lat,p.lng]),{maxZoom:16,padding:[60,60]})};
+function drawPins(){if(me&&$('#pg-list').classList.contains('on'))renderList();if(me&&$('#pg-sum').classList.contains('on'))renderSum();layer.clearLayers();const g={};
+ shown().forEach(p=>{const k=Math.round(p.lat/.0003)+','+Math.round(p.lng/.0003);(g[k]=g[k]||[]).push(p)});
  Object.values(g).forEach(list=>{list.sort((a,b)=>b.ts-a.ts);const p=list[0],n=list.length;
-  const ic=L.divIcon({className:'',html:`<div class="pin"><div class="ph" style="background-image:url(${esc(p.img)})"></div><i>★${p.rating}</i>${n>1?`<b class="cnt">${n}</b>`:''}</div>`,iconSize:[54,54],iconAnchor:[27,65]});
+  const ic=L.divIcon({className:'',html:`<div class="pin"><div class="ph" style="background-image:url(${esc(p.img)})"></div><i>★${p.rating}</i>${n>1?`<b class="cnt">${n}</b>`:''}</div>`,iconSize:[ST.pin,ST.pin],iconAnchor:[ST.pin/2,ST.pin+11]});
   L.marker([p.lat,p.lng],{icon:ic}).on('click',()=>openSheet(list)).addTo(layer)})}
 let meM=null;
 $('#here').onclick=()=>{if(!navigator.geolocation)return alert('この端末では現在地を使えません');const b=$('#here');b.disabled=true;
@@ -207,14 +239,16 @@ function openSheet(list){const s=$('#sheet'),n=list.length;
  const sl=p=>`<div class="sl"><img class="photo" src="${esc(p.img)}"><h3 style="margin:0">${esc(p.shop)||'（店名なし）'}</h3>
  <span class="stars sm">${[1,2,3,4,5].map(i=>`<span class="${i<=p.rating?'f':''}">★</span>`).join('')}</span>
  <div class="sub">${av(p.uid,(ucache[p.uid]||{}).name||p.name,(ucache[p.uid]||{}).photo,24)}${esc((ucache[p.uid]||{}).name||p.name)}${p.uid===me.uid?'（自分）':''} ・ ${new Date(p.ts).toLocaleDateString('ja-JP')}${p.edited?'（編集済み）':''}</div>
- ${p.amount>0?`<div style="margin:6px 0">💴 ¥${p.amount.toLocaleString('ja-JP')}</div>`:''}${p.addr?`<div style="margin:6px 0">📍 ${esc(p.addr)}</div>`:''}${p.comment?`<p>${esc(p.comment)}</p>`:''}
- <p><a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}" target="_blank" rel="noopener">Googleマップで開く ↗</a></p>
+ ${p.genre?`<div style="margin:6px 0"><span class="tag" style="margin-left:0">🏷 ${esc(p.genre)}</span></div>`:''}${p.amount>0?`<div style="margin:6px 0">💴 ¥${p.amount.toLocaleString('ja-JP')}</div>`:''}${p.addr?`<div style="margin:6px 0">📍 ${esc(p.addr)}</div>`:''}${p.comment?`<p>${esc(p.comment)}</p>`:''}
+ <p><a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}" target="_blank" rel="noopener">Googleマップで開く ↗</a> 　<button class="sec" data-share="${esc(p.id)}">↗ 共有</button></p>
  ${p.uid===me.uid?`<button class="sec" data-edit="${esc(p.id)}">✏️ 編集</button> <button class="sec" data-del="${esc(p.id)}">削除</button>`:''}</div>`;
  s.innerHTML=`<button class="x" id="cl">×</button>${n>1?`<div class="sub" id="ct" style="margin-bottom:8px">1 / ${n}　← 左右にスワイプ →</div>`:''}<div class="car">${list.map(sl).join('')}</div>`;
  s.style.display='block';$('#cl').onclick=()=>s.style.display='none';
  const car=s.querySelector('.car');car.onscroll=()=>{const i=Math.round(car.scrollLeft/(car.clientWidth+12));const c=$('#ct');if(c)c.textContent=`${Math.min(i+1,n)} / ${n}　← 左右にスワイプ →`};
+ s.querySelectorAll('[data-share]').forEach(b=>b.onclick=async()=>{const p=list.find(x=>x.id===b.dataset.share);if(!p)return;const url='https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng,t=(p.shop||'ごはん')+' ★'+p.rating;
+  try{if(navigator.share)await navigator.share({title:t,text:t,url});else{await navigator.clipboard.writeText(t+' '+url);alert('リンクをコピーしました')}}catch(e){}});
  s.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const p=list.find(x=>x.id===b.dataset.edit);if(!p)return;
-  editId=p.id;origLoc={lat:p.lat,lng:p.lng};draft={img:p.img,rating:p.rating,loc:{lat:p.lat,lng:p.lng}};
+  editId=p.id;origLoc={lat:p.lat,lng:p.lng};draft={img:p.img,rating:p.rating,genre:p.genre||'',loc:{lat:p.lat,lng:p.lng}};drawGn();
   $('#shop').value=p.shop||'';$('#cm').value=p.comment||'';$('#amt').value=p.amount>0?p.amount:'';$('#pre').src=p.img;$('#pre').style.display='block';
   drawSt();setLoc();$('#ctt').textContent='投稿を編集';$('#send').textContent='変更を保存';$('#comp').style.display='block'});
  s.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(confirm('削除しますか？')){await deleteDoc(doc(db,'posts',b.dataset.del));s.style.display='none'}})}
@@ -223,16 +257,18 @@ function openSheet(list){const s=$('#sheet'),n=list.length;
 const drawSt=()=>$('#st').innerHTML=[1,2,3,4,5].map(i=>`<span data-i="${i}" class="${i<=draft.rating?'f':''}">★</span>`).join('');drawSt();
 $('#st').onclick=e=>{if(e.target.dataset.i){draft.rating=+e.target.dataset.i;drawSt()}};
 const setLoc=()=>$('#locTxt').textContent=draft.loc?`場所：設定済み（${draft.loc.lat.toFixed(4)}, ${draft.loc.lng.toFixed(4)}）`:'場所：未設定';
+const drawGn=()=>$('#gn').innerHTML=GENRES.map(g=>`<span class="chip${draft.genre===g?' on':''}" data-g="${g}">${g}</span>`).join('');
+$('#gn').onclick=e=>{const g=e.target.dataset.g;if(!g)return;draft.genre=draft.genre===g?'':g;drawGn()};drawGn();
 const amt=()=>parseInt(($('#amt').value||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[^\d]/g,''))||0;
 $('#fab').onclick=()=>{resetComp();$('#comp').style.display='block'};$('#cc').onclick=()=>{if(editId)resetComp();$('#comp').style.display='none'};
 $('#pick').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,720/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);draft.img=c.toDataURL('image/jpeg',.7);$('#pre').src=draft.img;$('#pre').style.display='block'};im.src=r.result};r.readAsDataURL(f)};
 $('#gps').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{draft.loc={lat:p.coords.latitude,lng:p.coords.longitude};setLoc()},()=>alert('現在地を取得できません。位置情報の許可をご確認ください。'),{enableHighAccuracy:true,timeout:10000}):alert('非対応です');
 $('#onmap').onclick=()=>{picking=true;$('#comp').style.display='none';const b=$('#banner');b.textContent='地図をタップして場所を選んでください';b.style.display='block'};
-function resetComp(){editId=null;origLoc=null;draft={img:null,rating:0,loc:null};$('#pre').style.display='none';$('#shop').value='';$('#cm').value='';$('#amt').value='';drawSt();setLoc();$('#ctt').textContent='ごはんを投稿';$('#send').textContent='地図に投稿する'}
+function resetComp(){editId=null;origLoc=null;draft={img:null,rating:0,loc:null};drawGn();$('#pre').style.display='none';$('#shop').value='';$('#cm').value='';$('#amt').value='';drawSt();setLoc();$('#ctt').textContent='ごはんを投稿';$('#send').textContent='地図に投稿する'}
 $('#send').onclick=async()=>{if(!draft.img)return alert('写真を撮ってください');if(!draft.rating)return alert('星をつけてください');if(!draft.loc)return alert('場所を設定してください');
  const b=$('#send');b.disabled=true;
- try{const data={shop:$('#shop').value.trim(),comment:$('#cm').value.trim(),rating:draft.rating,amount:amt(),lat:draft.loc.lat,lng:draft.loc.lng,img:draft.img};
+ try{const data={genre:draft.genre||'',shop:$('#shop').value.trim(),comment:$('#cm').value.trim(),rating:draft.rating,amount:amt(),lat:draft.loc.lat,lng:draft.loc.lng,img:draft.img};
   if(editId){const moved=!origLoc||origLoc.lat!==draft.loc.lat||origLoc.lng!==draft.loc.lng;
    if(moved)data.addr=(await rev(draft.loc)).split(',').slice(0,3).join(' ');
    data.edited=Date.now();await setDoc(doc(db,'posts',editId),data,{merge:true});$('#sheet').style.display='none'}
@@ -253,6 +289,13 @@ let qt;$('#q').oninput=e=>{clearTimeout(qt);const v=e.target.value.trim().toLowe
  try{const s=await getDocs(query(collection(db,'users'),where('nameLower','>=',v),where('nameLower','<=',v+'\uf8ff'),limit(10)));
   const l=s.docs.filter(d=>d.id!==me.uid);$('#hits').innerHTML=l.length?l.map(d=>{ucache[d.id]={name:d.data().name,photo:d.data().photo||''};return rowH(d.id,d.data().name)}).join(''):'<div class="sub">見つかりません</div>'}catch(x){$('#hits').innerHTML='<div class="sub">検索に失敗しました</div>'}},300)};
 
+/* ---- 一覧（新しい順） ---- */
+function renderList(){const l=shown().slice().sort((a,b)=>b.ts-a.ts);
+ $('#llist').innerHTML=l.length?l.map(p=>`<div class="li" data-pid="${esc(p.id)}"><div class="th" style="background-image:url(${esc(p.img)})"></div><div style="min-width:0"><b>${esc(p.shop)||'（店名なし）'}</b>
+  <span class="stars sm">${[1,2,3,4,5].map(i=>`<span class="${i<=p.rating?'f':''}">★</span>`).join('')}</span>${p.genre?` <span class="tag" style="margin-left:4px">${esc(p.genre)}</span>`:''}
+  <div class="sub">${esc((ucache[p.uid]||{}).name||p.name)} ・ ${new Date(p.ts).toLocaleDateString('ja-JP')}${p.amount>0?' ・ ¥'+p.amount.toLocaleString('ja-JP'):''}</div></div></div>`).join(''):'<div class="sub">表示できる投稿がありません。地図の上のボタンで、表示を切り替えられます。</div>'}
+$('#llist').onclick=e=>{const d=e.target.closest('[data-pid]');if(!d)return;const p=shown().find(x=>x.id===d.dataset.pid);if(!p)return;
+ document.querySelector('nav button[data-p=map]').click();setTimeout(()=>{map.setView([p.lat,p.lng],17);const near=shown().filter(x=>Math.round(x.lat/.0003)===Math.round(p.lat/.0003)&&Math.round(x.lng/.0003)===Math.round(p.lng/.0003)).sort((a,b)=>b.ts-a.ts);openSheet(near)},80)};
 /* ---- 集計（自分の投稿の合計金額） ---- */
 const yen=n=>'¥'+n.toLocaleString('ja-JP');
 function renderSum(){const my=(postsBy[me.uid]||[]).filter(p=>p.amount>0),now=new Date(),ym=d=>d.getFullYear()+'年'+(d.getMonth()+1)+'月';
@@ -264,8 +307,18 @@ function renderSum(){const my=(postsBy[me.uid]||[]).filter(p=>p.amount>0),now=ne
  $('#sList').innerHTML=keys.length?keys.map(k=>`<div class="row"><div>${k}</div><b>${yen(m[k])}</b></div>`).join(''):'<div class="sub">まだありません</div>'}
 /* ---- 詳細を開いている間は、地図の操作ボタンを隠す ---- */
 new MutationObserver(()=>$('#pg-map').classList.toggle('so',$('#sheet').style.display==='block')).observe($('#sheet'),{attributes:true,attributeFilter:['style']});
+/* ---- 設定（テーマカラー・外観・ピン・文字） ---- */
+const COLORS=['#ff6b35','#e8336d','#d93025','#2e9e5b','#2a7de1','#8e44ad'];
+const drawSw=()=>$('#sw').innerHTML=COLORS.map(c=>`<span class="sw${c===ST.color?' on':''}" data-c="${c}" style="background:${c}"></span>`).join('');
+drawSw();$('#sTheme').value=ST.theme;$('#sPin').value=String(ST.pin);$('#sFs').value=String(ST.fs);
+$('#sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;ST.color=c;saveST();applyST();drawSw()};
+$('#sTheme').onchange=e=>{ST.theme=e.target.value;saveST();applyST();drawMap2()};
+$('#sPin').onchange=e=>{ST.pin=+e.target.value;saveST();applyST();drawPins()};
+$('#sFs').onchange=e=>{ST.fs=+e.target.value;saveST();applyST()};
+const drawMap2=()=>{};
+map.on('baselayerchange',e=>{ST.map=e.name;saveST()});
 /* ---- 最新版に更新（ホーム画面のアプリは再読み込みできないため） ---- */
-const APP_VER='2026.10.05-9';
+const APP_VER='2026.10.05-12';
 const refreshApp=()=>location.replace(location.pathname+'?r='+Date.now());
 $('#rf').onclick=refreshApp;$('#pupd').onclick=refreshApp;$('#pver').textContent='バージョン '+APP_VER;
 /* ---- プロフィール（名前・アイコンの変更） ---- */
@@ -281,5 +334,5 @@ $('#psave').onclick=async()=>{const n=$('#pname').value.trim();if(!n)return aler
  catch(x){alert('保存に失敗：'+x.code)}b.disabled=false};
 $('#plogout').onclick=()=>{if(confirm('ログアウトしますか？')){signOut(auth);$('#prof').style.display='none'}};
 /* ---- tabs ---- */
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{const p=b.dataset.p;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.id==='pg-'+p));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));if(p==='map')setTimeout(()=>map.invalidateSize(),50);else if(p==='sum')renderSum();else renderFol()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{const p=b.dataset.p;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.id==='pg-'+p));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));if(p==='map')setTimeout(()=>map.invalidateSize(),50);else if(p==='list')renderList();else if(p==='sum')renderSum();else renderFol()});
 </script></body></html>
