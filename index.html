@@ -45,6 +45,7 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
 .sub{color:var(--sub);font-size:12px}.tag{font-size:11px;background:var(--ac);color:#fff;border-radius:8px;padding:2px 7px;margin-left:6px}
 .pin .cnt{position:absolute;left:-9px;top:-9px;min-width:24px;height:24px;border-radius:12px;background:#2b2118;color:#fff;font:700 13px/24px sans-serif;text-align:center;padding:0 6px;box-shadow:0 1px 4px #0006}
 .car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.sl{flex:0 0 100%;min-width:0;scroll-snap-align:center}
+.big{font-size:30px;font-weight:700;color:var(--ac);line-height:1.3}
 #sheet{position:absolute;left:0;right:0;bottom:0;max-height:78%;overflow-y:auto;background:var(--card);border-radius:18px 18px 0 0;padding:16px;box-shadow:0 -4px 20px #0006;display:none;z-index:900}
 #comp{position:absolute;inset:0;background:var(--bg);z-index:1000;overflow-y:auto;padding:12px 16px 24px;display:none}
 .x{float:right;background:none;border:0;color:var(--sub);font-size:24px;cursor:pointer}
@@ -68,17 +69,25 @@ button.sec.on{background:var(--ac);color:#fff}button:disabled{opacity:.5}
   <div class="card"><h3>友達を探す</h3><input type="text" id="q" placeholder="名前で検索（アプリを使っている人）"><div id="hits"></div></div>
   <div class="card"><h3>フォロー状況</h3><div id="flist"></div><div class="sub" style="margin-top:8px">お互いにフォローすると、相手の投稿が地図に表示されます。</div></div>
  </section>
+ <section class="page" id="pg-sum">
+  <div class="card"><div class="sub">今月の合計金額</div><div class="big" id="sMonth">¥0</div></div>
+  <div class="card"><div class="sub">全期間の合計金額</div><div class="big" id="sAll">¥0</div>
+   <div class="sub" id="sInfo" style="margin-top:6px"></div></div>
+  <div class="card"><h3>月ごとの合計</h3><div id="sList"></div>
+   <div class="sub" style="margin-top:8px">自分の投稿だけを集計しています（友達には見えません）。</div></div>
+ </section>
  <div id="comp">
-  <button class="x" id="cc">×</button><h3 style="margin-top:0">ごはんを投稿</h3>
+  <button class="x" id="cc">×</button><h3 style="margin-top:0" id="ctt">ごはんを投稿</h3>
   <div class="card"><img class="pre" id="pre" style="display:none"><input type="file" id="file" accept="image/*" capture="environment" hidden><button class="sec" id="pick">📷 写真を撮る / 選ぶ</button></div>
   <div class="card"><input type="text" id="shop" placeholder="お店の名前" maxlength="60"><textarea id="cm" rows="2" placeholder="感想（任意）" maxlength="200"></textarea>
+   <input type="text" id="amt" inputmode="numeric" placeholder="金額（円・任意）例：1200" autocomplete="off">
    <div class="sub">評価（★1〜5）</div><div class="stars" id="st"></div></div>
   <div class="card"><div class="sub" id="locTxt" style="margin-bottom:8px">場所：未設定</div>
    <button class="sec" id="gps">📍 現在地</button> <button class="sec" id="onmap">🗺 地図で選ぶ</button></div>
   <button class="pri" id="send">地図に投稿する</button>
  </div>
 </main>
-<nav><button class="on" data-p="map"><b>🗺</b>マップ</button><button data-p="fol"><b>👥</b>友達</button></nav>
+<nav><button class="on" data-p="map"><b>🗺</b>マップ</button><button data-p="sum"><b>💴</b>集計</button><button data-p="fol"><b>👥</b>友達</button></nav>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
@@ -95,7 +104,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 if(false){$('#lmsg').textContent='⚠ index.html の firebaseConfig を設定してください';$('#gbtn').disabled=true}
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-let me=null,follows=[],followers=[],postsBy={},subs={},draft={img:null,rating:0,loc:null},picking=false,tmpM=null;
+let me=null,follows=[],followers=[],postsBy={},subs={},draft={img:null,rating:0,loc:null},picking=false,tmpM=null,editId=null,origLoc=null;
 
 /* ---- auth ---- */
 $('#gbtn').onclick=async()=>{$('#lmsg').textContent='';try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){$('#lmsg').textContent=e.code==='auth/popup-blocked'?'ポップアップがブロックされました。Safariの設定でポップアップを許可して、もう一度押してください':e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'?'':'ログイン失敗：'+e.code}};
@@ -130,7 +139,7 @@ base['標準'].addTo(map);const ctrl=L.control.layers(base,null,{position:'botto
  map.removeLayer(base['標準']);vec.addTo(map);ctrl.addBaseLayer(vec,'やわらか');
  }catch(e){console.warn('vector map unavailable',e)}})();
 const layer=L.layerGroup().addTo(map);
-function drawPins(){layer.clearLayers();const g={};
+function drawPins(){if(me&&$('#pg-sum').classList.contains('on'))renderSum();layer.clearLayers();const g={};
  Object.values(postsBy).flat().forEach(p=>{const k=Math.round(p.lat/.0003)+','+Math.round(p.lng/.0003);(g[k]=g[k]||[]).push(p)});
  Object.values(g).forEach(list=>{list.sort((a,b)=>b.ts-a.ts);const p=list[0],n=list.length;
   const ic=L.divIcon({className:'',html:`<div class="pin"><div class="ph" style="background-image:url(${esc(p.img)})"></div><i>★${p.rating}</i>${n>1?`<b class="cnt">${n}</b>`:''}</div>`,iconSize:[54,54],iconAnchor:[27,65]});
@@ -155,29 +164,40 @@ $('#ps').onkeydown=e=>e.key==='Enter'&&$('#psb').click();
 function openSheet(list){const s=$('#sheet'),n=list.length;
  const sl=p=>`<div class="sl"><img class="photo" src="${esc(p.img)}"><h3 style="margin:0">${esc(p.shop)||'（店名なし）'}</h3>
  <span class="stars sm">${[1,2,3,4,5].map(i=>`<span class="${i<=p.rating?'f':''}">★</span>`).join('')}</span>
- <div class="sub">${esc(p.name)}${p.uid===me.uid?'（自分）':''} ・ ${new Date(p.ts).toLocaleDateString('ja-JP')}</div>
- ${p.addr?`<div style="margin:6px 0">📍 ${esc(p.addr)}</div>`:''}${p.comment?`<p>${esc(p.comment)}</p>`:''}
+ <div class="sub">${esc(p.name)}${p.uid===me.uid?'（自分）':''} ・ ${new Date(p.ts).toLocaleDateString('ja-JP')}${p.edited?'（編集済み）':''}</div>
+ ${p.amount>0?`<div style="margin:6px 0">💴 ¥${p.amount.toLocaleString('ja-JP')}</div>`:''}${p.addr?`<div style="margin:6px 0">📍 ${esc(p.addr)}</div>`:''}${p.comment?`<p>${esc(p.comment)}</p>`:''}
  <p><a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}" target="_blank" rel="noopener">Googleマップで開く ↗</a></p>
- ${p.uid===me.uid?`<button class="sec" data-del="${esc(p.id)}">この投稿を削除</button>`:''}</div>`;
+ ${p.uid===me.uid?`<button class="sec" data-edit="${esc(p.id)}">✏️ 編集</button> <button class="sec" data-del="${esc(p.id)}">削除</button>`:''}</div>`;
  s.innerHTML=`<button class="x" id="cl">×</button>${n>1?`<div class="sub" id="ct" style="margin-bottom:8px">1 / ${n}　← 左右にスワイプ →</div>`:''}<div class="car">${list.map(sl).join('')}</div>`;
  s.style.display='block';$('#cl').onclick=()=>s.style.display='none';
  const car=s.querySelector('.car');car.onscroll=()=>{const i=Math.round(car.scrollLeft/(car.clientWidth+12));const c=$('#ct');if(c)c.textContent=`${Math.min(i+1,n)} / ${n}　← 左右にスワイプ →`};
+ s.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const p=list.find(x=>x.id===b.dataset.edit);if(!p)return;
+  editId=p.id;origLoc={lat:p.lat,lng:p.lng};draft={img:p.img,rating:p.rating,loc:{lat:p.lat,lng:p.lng}};
+  $('#shop').value=p.shop||'';$('#cm').value=p.comment||'';$('#amt').value=p.amount>0?p.amount:'';$('#pre').src=p.img;$('#pre').style.display='block';
+  drawSt();setLoc();$('#ctt').textContent='投稿を編集';$('#send').textContent='変更を保存';$('#comp').style.display='block'});
  s.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(confirm('削除しますか？')){await deleteDoc(doc(db,'posts',b.dataset.del));s.style.display='none'}})}
 
 /* ---- 投稿 ---- */
 const drawSt=()=>$('#st').innerHTML=[1,2,3,4,5].map(i=>`<span data-i="${i}" class="${i<=draft.rating?'f':''}">★</span>`).join('');drawSt();
 $('#st').onclick=e=>{if(e.target.dataset.i){draft.rating=+e.target.dataset.i;drawSt()}};
 const setLoc=()=>$('#locTxt').textContent=draft.loc?`場所：設定済み（${draft.loc.lat.toFixed(4)}, ${draft.loc.lng.toFixed(4)}）`:'場所：未設定';
-$('#fab').onclick=()=>$('#comp').style.display='block';$('#cc').onclick=()=>$('#comp').style.display='none';
+const amt=()=>parseInt(($('#amt').value||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/[^\d]/g,''))||0;
+$('#fab').onclick=()=>{resetComp();$('#comp').style.display='block'};$('#cc').onclick=()=>{if(editId)resetComp();$('#comp').style.display='none'};
 $('#pick').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,720/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);draft.img=c.toDataURL('image/jpeg',.7);$('#pre').src=draft.img;$('#pre').style.display='block'};im.src=r.result};r.readAsDataURL(f)};
 $('#gps').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{draft.loc={lat:p.coords.latitude,lng:p.coords.longitude};setLoc()},()=>alert('現在地を取得できません。位置情報の許可をご確認ください。'),{enableHighAccuracy:true,timeout:10000}):alert('非対応です');
 $('#onmap').onclick=()=>{picking=true;$('#comp').style.display='none';const b=$('#banner');b.textContent='地図をタップして場所を選んでください';b.style.display='block'};
+function resetComp(){editId=null;origLoc=null;draft={img:null,rating:0,loc:null};$('#pre').style.display='none';$('#shop').value='';$('#cm').value='';$('#amt').value='';drawSt();setLoc();$('#ctt').textContent='ごはんを投稿';$('#send').textContent='地図に投稿する'}
 $('#send').onclick=async()=>{if(!draft.img)return alert('写真を撮ってください');if(!draft.rating)return alert('星をつけてください');if(!draft.loc)return alert('場所を設定してください');
- const b=$('#send');b.disabled=true;try{const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);const addr=(await rev(draft.loc)).split(',').slice(0,3).join(' ');
-  await setDoc(doc(db,'posts',id),{uid:me.uid,name:me.name,shop:$('#shop').value.trim(),comment:$('#cm').value.trim(),rating:draft.rating,lat:draft.loc.lat,lng:draft.loc.lng,addr,img:draft.img,ts:Date.now()});
-  map.setView([draft.loc.lat,draft.loc.lng],17);draft={img:null,rating:0,loc:null};$('#pre').style.display='none';$('#shop').value='';$('#cm').value='';drawSt();setLoc();$('#comp').style.display='none'}
- catch(e){alert('投稿に失敗：'+e.code)}b.disabled=false};
+ const b=$('#send');b.disabled=true;
+ try{const data={shop:$('#shop').value.trim(),comment:$('#cm').value.trim(),rating:draft.rating,amount:amt(),lat:draft.loc.lat,lng:draft.loc.lng,img:draft.img};
+  if(editId){const moved=!origLoc||origLoc.lat!==draft.loc.lat||origLoc.lng!==draft.loc.lng;
+   if(moved)data.addr=(await rev(draft.loc)).split(',').slice(0,3).join(' ');
+   data.edited=Date.now();await setDoc(doc(db,'posts',editId),data,{merge:true});$('#sheet').style.display='none'}
+  else{const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);const addr=(await rev(draft.loc)).split(',').slice(0,3).join(' ');
+   await setDoc(doc(db,'posts',id),{...data,uid:me.uid,name:me.name,addr,ts:Date.now()})}
+  map.setView([draft.loc.lat,draft.loc.lng],17);resetComp();$('#comp').style.display='none'}
+ catch(e){alert('保存に失敗：'+e.code)}b.disabled=false};
 
 /* ---- フォロー ---- */
 const isF=id=>follows.some(f=>f.to===id),isR=id=>followers.some(f=>f.from===id);
@@ -191,6 +211,15 @@ let qt;$('#q').oninput=e=>{clearTimeout(qt);const v=e.target.value.trim().toLowe
  try{const s=await getDocs(query(collection(db,'users'),where('nameLower','>=',v),where('nameLower','<=',v+'\uf8ff'),limit(10)));
   const l=s.docs.filter(d=>d.id!==me.uid);$('#hits').innerHTML=l.length?l.map(d=>rowH(d.id,d.data().name,d.data().photo)).join(''):'<div class="sub">見つかりません</div>'}catch(x){$('#hits').innerHTML='<div class="sub">検索に失敗しました</div>'}},300)};
 
+/* ---- 集計（自分の投稿の合計金額） ---- */
+const yen=n=>'¥'+n.toLocaleString('ja-JP');
+function renderSum(){const my=(postsBy[me.uid]||[]).filter(p=>p.amount>0),now=new Date(),ym=d=>d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+ const all=my.reduce((a,p)=>a+p.amount,0),mo=my.filter(p=>ym(new Date(p.ts))===ym(now)).reduce((a,p)=>a+p.amount,0);
+ $('#sMonth').textContent=yen(mo);$('#sAll').textContent=yen(all);
+ $('#sInfo').textContent=my.length?`金額つきの投稿 ${my.length}件 ／ 1回あたり平均 ${yen(Math.round(all/my.length))}`:'金額を入れて投稿すると、ここに合計が出ます。';
+ const m={};my.forEach(p=>{const k=ym(new Date(p.ts));m[k]=(m[k]||0)+p.amount});
+ const keys=Object.keys(m).sort((a,b)=>{const f=x=>x.replace(/年|月/g,'-').split('-').map(Number);const [ay,am]=f(a),[by,bm]=f(b);return by*12+bm-(ay*12+am)});
+ $('#sList').innerHTML=keys.length?keys.map(k=>`<div class="row"><div>${k}</div><b>${yen(m[k])}</b></div>`).join(''):'<div class="sub">まだありません</div>'}
 /* ---- tabs ---- */
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{const p=b.dataset.p;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.id==='pg-'+p));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));if(p==='map')setTimeout(()=>map.invalidateSize(),50);else renderFol()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{const p=b.dataset.p;document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.id==='pg-'+p));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));if(p==='map')setTimeout(()=>map.invalidateSize(),50);else if(p==='sum')renderSum();else renderFol()});
 </script></body></html>
